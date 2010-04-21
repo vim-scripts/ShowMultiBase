@@ -1,0 +1,27 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=3070
+
+This is a very simple script to display a number in all or some of binary, octal, decimal and hexadecimal formats at the same time.
+
+There are several existing converter scripts available, which you might want to check:
+- vimscript #238 : Function to output a number as HEX
+- vimscript #1538 : Convert from base(2,8,10,16) to base(2-32). Also character to html entity.
+- vimscript #54 : Convert to/from various numeric bases
+
+The motivation of this script is a bit different, however. I often have to read logfiles with hexdumps and numbers with altering bases. Therefore, I want to see the binary, decimal and hexadecimal representations at the same time to help easier reading of these logfiles and to avoid using an external calculator as much as possible. In addition, I wanted to have more control over how the numbers are displayed that I can reuse the displayed numbers in e.g. reports.
+
+E.g, with the default settings, executing the :ShowMultiBase command, while the cursor is on the number 1234, you'll have the following output: b0100 1101 0010 == 02322 == 1234 == 0x04d2
+If the number is e.g. hexadecimal, you can override the autosensed base (10) with :ShowMultiBase 16
+
+The conversion utility functions are also available, but if you need a general conversion function, I recommend using vimscript #54.
+There are several display configurations (e.g: bases to show, prefix usage, segmentation etc.), for details see the comments in the script!
+
+Syntax: :ShowMultiBase [base [number]]
+If 'number' is not specified, the number under the cursor is taken as input. If 'base' is not specified, it is autosensed. If 'number' is given, 'base' must be also given, but 0 may be used to autosense.
+
+The following mappings are created by default:
+\=   Display the number under the cursor with autosensed base in the configured bases
+\b=  Display the binary number under the cursor in the configured bases
+\o=  Display the octal number under the cursor in the configured bases
+\d=  Display the decimal number under the cursor in the configured bases
+\h=  Display the hexadecimal number under the cursor in the configured bases
+
