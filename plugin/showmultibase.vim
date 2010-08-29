@@ -1,7 +1,7 @@
 " ========================================================================== "
 " Name:        showmultibase                                                 "
-" Version:     0.1                                                           "
-" Updated:     2010-04-20 23:59:52                                           "
+" Version:     0.2                                                           "
+" Updated:     2010-08-29 11:00:32                                           "
 " Description: Displays the number specified or under the cursor in binary,  "
 "                octal, decimal and hexadecimal form.                        "
 "                It also provides some conversion functions: {2,8,16}<->10   "
@@ -11,6 +11,8 @@
 "                get_pattern_at_cursor().                                    "
 "              Michael Geddes                                                "
 "                Author of hex.vim (vimscript #238), source of Dec2Hex()     "
+"              Mun Johl <Mun.Johl AT emulex DOT com>                         "
+"                Bug report: 32<= bit numbers are displayed incorrectly      "
 " ========================================================================== "
 
 
@@ -39,7 +41,7 @@ endif
 " without inserting any separating space in between them. The digit blocks of
 " this size are separated with a single space.
 if !exists("g:ShowMultiBase_SegmentBin")
-  let g:ShowMultiBase_SegmentBin = 4
+  let g:ShowMultiBase_SegmentBin = 8
 endif
 " The number of hexadecimal digits that shall be displayed next to each other
 " without inserting any separating space in between them. The digit blocks of
@@ -135,7 +137,7 @@ function! ShowMultiBase(...)
   " with autosensing the base.
   let l:base_error = 0
   if l:base == 2
-    if match(l:n, '^b\?1[01]\+$') == -1
+    if match(l:n, '^b\?[01]\+$') == -1
       let l:base_error = 1
     else
       let l:nbin = l:n
@@ -204,7 +206,7 @@ function! ShowMultiBase(...)
 
   " Convert to decimal first
   if (l:base != 10)
-    let l:ndec = Base2Dec(l:n, l:base)
+    let l:ndec = printf("%.0f", Base2Dec(l:n, l:base))
   endif
 
   " Convert to octal
@@ -296,13 +298,17 @@ endfunction
 
 function! Dec2Hex(number)
   let s = 0 " segment counter
-	let no=a:number
-	let result=''
-	while no>0
-		let result=s:hexdig[no%16].result
-		let no=no/16
+	let nr = str2float(a:number)
+	let result = ''
+	while nr >= 1
+    let intresstr = printf("%f", nr / 16)
+    let intresstr = substitute(intresstr, '\.\d\+$', '', '')
+    let intres = str2float(intresstr)
+    let modres = float2nr(nr - intres * 16)
+    let result = printf("%x",modres) . result
+		let nr = intres
     let s = s + 1
-    if (s == g:ShowMultiBase_SegmentHex)
+    if s == g:ShowMultiBase_SegmentHex
       let result = ' ' . result
       let s = 0
     endif
@@ -323,30 +329,19 @@ function! Dec2Hex(number)
 endfunction
 
 
-function! Hex2Dec(number)
-  let result = 0
-  let pos = 0
-  while pos < strlen(a:number)
-    let x = strpart(a:number, pos, 1)
-    let d = match(s:hexdig, x)
-    let result = result * 16 + d
-    let pos = pos + 1
-  endwhile
-  return result
-endfunction
-
 
 function! Dec2Bin(number)
   let s = 0 " segment counter
-  let n = a:number
+	let nr = str2float(a:number)
   let result = ''
-  while n > 0
-    if (match(n, '[13579]$') != -1) " odd
-      let result = '1' . result
-    else " even
-      let result = '0' . result
-    endif
-    let n = n / 2
+  while nr >= 1
+    let intresstr = printf("%f", nr / 2)
+    let intresstr = substitute(intresstr, '\.\d\+$', '', '')
+    let intres = str2float(intresstr)
+    let modres = float2nr(nr - intres * 2)
+    let result = printf("%d",modres) . result
+    "echo "nr  = ". printf("%f", nr) . ", intres = " . printf("%f", intres) . ", modres = " . modres
+		let nr = intres
     let s = s + 1
     if (s == g:ShowMultiBase_SegmentBin)
       let result = ' ' . result
@@ -371,9 +366,10 @@ endfunction
 
 " Convert any base = [2-16] to decimal
 function! Base2Dec(number, base)
-  let result = 0
+  let result = 0.0
   let pos = 0
-  while pos < strlen(a:number)
+  let len = strlen(a:number)
+  while pos < len
     let x = strpart(a:number, pos, 1)
     let d = match(s:hexdig, x)
     let result = result * a:base + d
@@ -384,11 +380,15 @@ endfunction
 
 
 function! Dec2Oct(number)
-  let n = a:number
+	let nr = str2float(a:number)
   let result = ''
-  while n > 0
-    let result = n % 8 . result
-    let n = n / 8
+  while nr >= 1
+    let intresstr = printf("%f", nr / 8)
+    let intresstr = substitute(intresstr, '\.\d\+$', '', '')
+    let intres = str2float(intresstr)
+    let modres = float2nr(nr - intres * 8)
+    let result = printf("%d",modres) . result
+		let nr = intres
   endwhile
   if result == ''
     let result = '0'
@@ -404,7 +404,7 @@ function! s:clean_number(num)
   " Hexadecimal: 0x...
   " I.e. remove any 0,b,x characters from the front
   let l:number = substitute(a:num, '^b', '', '')
-  let l:number = substitute(l:number, '^0[xX]', '', '')
-  let l:number = substitute(l:number, '^0+[^0]$', '', '')
+  let l:number = substitute(l:number, '^0\+', '', '')
+  let l:number = substitute(l:number, '^[xX]', '', '')
   return l:number
 endfunction
