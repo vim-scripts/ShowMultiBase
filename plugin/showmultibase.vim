@@ -780,7 +780,9 @@ function! s:save_in_register(value, regname, base)
     call setreg('"', l:regval, 'c')
   endif
   if g:ShowMultiBase_Register_ClipboardBase == a:base
-    call setreg('+', l:regval, 'c')
+    if has('clipboard')
+      call setreg('+', l:regval, 'c')
+    endif
   endif
 endfunction
 
